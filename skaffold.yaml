@@ -1,0 +1,18 @@
+
+apiVersion: skaffold/v1beta2
+kind: Config
+build:
+  googleCloudBuild:
+    projectId: olivierba-sandbox
+  tagPolicy:
+    envTemplate:
+      template: "{{.IMAGE_NAME}}:latest"
+  # defines where to find the code at build time and where to push the resulting image
+  artifacts:
+  - image: pubsub-client-demo
+    context: src/client
+# defines the Kubernetes manifests to deploy on each run
+deploy:
+  kubectl:
+    manifests:
+    - ./kubernetes-manifests/*

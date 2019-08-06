@@ -1,0 +1,1 @@
+gcloud pubsub topics publish echo --message="Hello, world!"

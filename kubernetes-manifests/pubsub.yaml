@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pubsub
+spec:
+  selector:
+    matchLabels:
+      app: pubsub
+  template:
+    metadata:
+      labels:
+        app: pubsub
+    spec:
+      serviceAccountName: gkewid-service #this is our workload identity
+      containers:
+      - name: subscriber
+        image: eu.gcr.io/olivierba-sandbox/pubsub-client-demo:latest
