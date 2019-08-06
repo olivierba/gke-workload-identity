@@ -5,7 +5,7 @@ gcloud iam service-accounts create gke-horizontal-pod-autoscaler --display-name 
 gcloud iam service-accounts add-iam-policy-binding \
   --role roles/iam.workloadIdentityUser \
   --member "serviceAccount:olivierba-sandbox.svc.id.goog[custom-metrics/custom-metrics-stackdriver-adapter]" \
-  gke-horizontal-pod-autoscaler@olivierba-sandbox.iam.gserviceaccount.com
+  361681312054-compute@developer.gserviceaccount.com #gke-horizontal-pod-autoscaler@olivierba-sandbox.iam.gserviceaccount.com
 
-kubectl annotate serviceaccount --namespace custom-metrics custom-metrics-stackdriver-adapter iam.gke.io/gcp-service-account=gke-horizontal-pod-autoscaler@olivierba-sandbox.iam.gserviceaccount.com --overwrite=true
+kubectl annotate serviceaccount --namespace custom-metrics custom-metrics-stackdriver-adapter iam.gke.io/gcp-service-account=361681312054-compute@developer.gserviceaccount.com --overwrite=true
 
