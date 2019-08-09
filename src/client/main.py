@@ -1,70 +1,67 @@
-# -*- coding: utf-8 -*-
-"""Pub/Sub pull example on Google Kubernetes Engine.
-
-This program pulls messages from a Cloud Pub/Sub topic and
-prints to standard output.
-"""
-
-import datetime
+import logging
+import multiprocessing
+import random
 import time
-import os
 
-from google.cloud import pubsub
+from google.cloud import pubsub_v1
 
-PUBSUB_TOPIC = 'echo'
-PUBSUB_SUBSCRIPTION = 'echo-read'
-PROJECT=os.getenv('GOOGLE_CLOUD_PROJECT')
+project_id = "olivierba-sandbox" #TODO replace with your projectID
+subscription_name = "echo-read"
 
-def main():
+subscriber = pubsub_v1.SubscriberClient()
+subscription_path = subscriber.subscription_path(
+    project_id, subscription_name)
 
-    subscriber = pubsub.SubscriberClient()
-    topic_name = 'projects/{project_id}/topics/{topic}'.format(
-        project_id=os.getenv('GOOGLE_CLOUD_PROJECT'),
-        topic=PUBSUB_TOPIC,  
-    )
+NUM_MESSAGES = 2
+ACK_DEADLINE = 30
+SLEEP_TIME = 10
 
-    subscription_name = 'projects/{project_id}/subscriptions/{sub}'.format(
-        project_id=os.getenv('GOOGLE_CLOUD_PROJECT'),
-        sub=PUBSUB_SUBSCRIPTION, 
-    )
+# The subscriber pulls a specific number of messages.
+response = subscriber.pull(subscription_path, max_messages=NUM_MESSAGES)
 
-    #subscriber.create_subscription(name=subscription_name, topic=topic_name)
+multiprocessing.log_to_stderr()
+logger = multiprocessing.get_logger()
+logger.setLevel(logging.INFO)
 
-  
+def worker(msg):
+    """Simulates a long-running process."""
+    RUN_TIME = random.randint(1, 60)
+    logger.info('{}: Running {} for {}s'.format(
+        time.strftime("%X", time.gmtime()), msg.message.data, RUN_TIME))
+    time.sleep(RUN_TIME)
 
+# `processes` stores process as key and ack id and message as values.
+processes = dict()
+for message in response.received_messages:
+    process = multiprocessing.Process(target=worker, args=(message,))
+    processes[process] = (message.ack_id, message.message.data)
+    process.start()
 
-    """Continuously pull messages from subsciption"""
-    #client = pubsub.Client()
-    #subscription = client.topic(PUBSUB_TOPIC).subscription(PUBSUB_SUBSCRIPTION)
+while processes:
+    for process in list(processes):
+        ack_id, msg_data = processes[process]
+        # If the process is still running, reset the ack deadline as
+        # specified by ACK_DEADLINE once every while as specified
+        # by SLEEP_TIME.
+        if process.is_alive():
+            # `ack_deadline_seconds` must be between 10 to 600.
+            subscriber.modify_ack_deadline(
+                subscription_path,
+                [ack_id],
+                ack_deadline_seconds=ACK_DEADLINE)
+            logger.info('{}: Reset ack deadline for {} for {}s'.format(
+                time.strftime("%X", time.gmtime()),
+                msg_data, ACK_DEADLINE))
 
-    print('Pulling messages from Pub/Sub subscription...')
-    while True:
-        try:
-            print("Project:"+PROJECT)
-            subscription_path = subscriber.subscription_path(PROJECT, PUBSUB_SUBSCRIPTION)
-            response = subscriber.pull(subscription_path, max_messages=10)
+        # If the processs is finished, acknowledges using `ack_id`.
+        else:
+            subscriber.acknowledge(subscription_path, [ack_id])
+            logger.info("{}: Acknowledged {}".format(
+                time.strftime("%X", time.gmtime()), msg_data))
+            processes.pop(process)
 
-            for msg in response.received_messages:
-                print("[{0}] Received message: ID={1} Data={2}".format(
-                    datetime.datetime.now(),
-                    msg.message_id,
-                    msg.data))
-                process(msg)
-        
-            ack_ids = [msg.ack_id for msg in response.received_messages]
-            subscriber.acknowledge(subscription_path, ack_ids)
-        except Exception as err:
-            print(err.message)
+    # If there are still processes running, sleeps the thread.
+    if processes:
+        time.sleep(SLEEP_TIME)
 
-
-def process(message):
-    """Process received message"""
-    print("[{0}] Processing: {1}".format(datetime.datetime.now(),
-                                         message.message_id))
-    time.sleep(3)
-    print("[{0}] Processed: {1}".format(datetime.datetime.now(),
-                                        message.message_id))
-
-
-if __name__ == '__main__':
-    main()
+print("Received and acknowledged {} messages. Done.".format(NUM_MESSAGES))
