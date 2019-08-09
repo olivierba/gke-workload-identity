@@ -39,18 +39,23 @@ def main():
 
     print('Pulling messages from Pub/Sub subscription...')
     while True:
-        subscription_path = subscriber.subscription_path(PROJECT, PUBSUB_SUBSCRIPTION)
-        response = subscriber.pull(subscription_path, max_messages=10)
+        try:
+            print("Project:"+PROJECT)
+            subscription_path = subscriber.subscription_path(PROJECT, PUBSUB_SUBSCRIPTION)
+            response = subscriber.pull(subscription_path, max_messages=10)
 
-        for msg in response.received_messages:
-            print("[{0}] Received message: ID={1} Data={2}".format(
-                datetime.datetime.now(),
-                msg.message_id,
-                msg.data))
-            process(msg)
+            for msg in response.received_messages:
+                print("[{0}] Received message: ID={1} Data={2}".format(
+                    datetime.datetime.now(),
+                    msg.message_id,
+                    msg.data))
+                process(msg)
         
-        ack_ids = [msg.ack_id for msg in response.received_messages]
-        subscriber.acknowledge(subscription_path, ack_ids)
+            ack_ids = [msg.ack_id for msg in response.received_messages]
+            subscriber.acknowledge(subscription_path, ack_ids)
+        except Exception as err:
+            print(err.message)
+
 
 def process(message):
     """Process received message"""
