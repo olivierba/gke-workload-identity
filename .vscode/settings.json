@@ -1,0 +1,10 @@
+{
+    "cloudcode.profile-cluster-map": {
+        "[default]": "gke_olivierba-sandbox_europe-west1-b_ks-test"
+    },
+    "cloudcode.profile-registry-map": {
+        "[default]": "eu.gcr.io/olivierba-sandbox"
+    },
+    "python.linting.pylintEnabled": true,
+    "python.linting.enabled": true
+}

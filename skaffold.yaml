@@ -15,4 +15,4 @@ build:
 deploy:
   kubectl:
     manifests:
-    - ./kubernetes-manifests/*
+    - ./others-k8s-manifests/*
