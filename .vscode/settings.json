@@ -6,5 +6,6 @@
         "[default]": "eu.gcr.io/olivierba-sandbox"
     },
     "python.linting.pylintEnabled": true,
-    "python.linting.enabled": true
+    "python.linting.enabled": true,
+    "python.pythonPath": "pyenv/bin/python3.7"
 }
